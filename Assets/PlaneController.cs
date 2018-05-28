@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BevelController : MonoBehaviour {
+public class PlaneController : MonoBehaviour {
 
     public PhysicsManager physicsManager;
 
@@ -10,21 +10,20 @@ public class BevelController : MonoBehaviour {
     public GameObject p2;
     public GameObject p3;
 
-    [Range(0,Mathf.PI/2.0f)]
-    public float angle = Mathf.PI/4.0f;
-    [Range(1,5)]
-    public float scale = 1;
-
     public Vector3 normal;
 
-    private float initPosY;
-
-    private const  float bevelMass =-1;
+    private const float planeMass = -1;
 
     [Range(0.0f, 1.0f)]
     public float bounciness = 0.0f;
 
     public BounceCombineType bounceCombineType;
+
+
+    [Range(1, 5)]
+    public float scale = 1; //ONLY X and Z 
+
+    private Vector3 initScale;
 
     public Vector3 CalNormal()
     {
@@ -33,33 +32,25 @@ public class BevelController : MonoBehaviour {
         return Vector3.Normalize(Vector3.Cross(v1, v2));
     }
 
-    
-
     // Use this for initialization
     void Start () {
-        initPosY = transform.localPosition.y;
-        transform.localScale = new Vector3(transform.localScale.x, scale*Mathf.Tan(angle), scale);
-        transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
-        angle = Mathf.Atan2(transform.localScale.y,transform.localScale.z);
-
+        initScale = transform.localScale;
         normal = CalNormal();
-        //Debug.Log("normal: "+normal);
-        name = physicsManager.AddObject("bevel", bevelMass, normal);
+        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * initScale);
+        name = physicsManager.AddObject("plane", planeMass, normal);
         physicsManager.SetObject(name, normal);
-        physicsManager.SetObject(name, bounciness, bounceCombineType);
+        physicsManager.SetObject(name,bounciness,bounceCombineType);
+
+
     }
 
     // Update is called once per frame
     void Update () {
-        transform.localScale = new Vector3(transform.localScale.x, scale * Mathf.Tan(angle), scale);
-        transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
-        angle = Mathf.Atan2(transform.localScale.y, transform.localScale.z);
         normal = CalNormal();
-        //Debug.Log("normal: " + normal);
+        transform.localScale = scale*(initScale - Vector3.Dot(initScale, normal) * initScale);
         physicsManager.SetObject(name, normal);
 
     }
-
 
     private void OnTriggerEnter(Collider other)
     {

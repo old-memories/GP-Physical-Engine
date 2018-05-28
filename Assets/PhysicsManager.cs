@@ -8,13 +8,22 @@ public enum ForceType
     GRAVITY,
     NORMAL,
     FRICTION,
+    HIT
 }
 
 public enum ModelType
 {
     BEVEL,
     BALL,
+    PLANE,
+}
 
+public enum BounceCombineType
+{
+    Average,
+    Minimum,
+    Multiply,
+    Maximum,
 }
 
 
@@ -58,6 +67,11 @@ public class Model
 {
     public string name;
     public ModelType modelType;
+    public Vector3 normal;
+    public float mass;
+    public Vector3 vel;
+    public float bounciness;
+    public BounceCombineType bounceCombineType;
     public Dictionary<string,Force> forces;
 
     public Model()
@@ -65,12 +79,28 @@ public class Model
         forces = new Dictionary<string, Force>();
     }
 
-    public Model(string name,ModelType modelType)
+    public Model(string name,float mass, ModelType modelType)
     {
         this.name = name;
         this.modelType = modelType;
-        forces = new Dictionary<string, Force>();
+        this.forces = new Dictionary<string, Force>();
+        this.normal = Vector3.zero;
+        this.mass = mass;
+        this.vel = Vector3.zero;
+        this.bounciness = 0;
+        this.bounceCombineType = BounceCombineType.Average;
+    }
 
+    public Model(string name,float mass, Vector3 normal, ModelType modelType)
+    {
+        this.name = name;
+        this.modelType = modelType;
+        this.forces = new Dictionary<string, Force>();
+        this.normal = normal;
+        this.mass = mass;
+        this.vel = Vector3.zero;
+        this.bounciness = 0;
+        this.bounceCombineType = BounceCombineType.Average;
     }
 
 
@@ -79,14 +109,15 @@ public class Model
 
 
 
-    public virtual void AddForce(string giverName, ForceType type,string name)
+
+    public void AddForce(string giverName, ForceType type,string name)
     {
         Force f = new Force(giverName,type, name);
         Debug.Log(f.ToString());
         forces.Add(name, f);
     }
 
-    public virtual void AddForce(string giverName, ForceType type, Vector3 volume, string name)
+    public void AddForce(string giverName, ForceType type, Vector3 volume, string name)
     {
         Force f = new Force(giverName, type, name,volume);
         Debug.Log(f.ToString());
@@ -94,133 +125,116 @@ public class Model
     }
 
 
-    public virtual bool RemoveForce(string forceName)
+    public bool RemoveForce(string forceName)
     {
         return forces.Remove(forceName);
     }
 
-    public virtual void ChangeForce(string forceName, Vector3 volume)
+    public void ChangeForce(string forceName, Vector3 volume)
     {
         if(forces[forceName].needCal==false)
             forces[forceName].volume = volume;
     }
 
-    public new virtual string ToString()
+    public new string ToString()
     {
         return "name: "+name;
     }
-    public virtual void SetAttribute(string name)
+    public void SetAttribute(string name)
     {
         this.name = name;
     }
-    public virtual void SetAttribute(string name, Vector3 normal, float height, float length)
+
+    public void SetAttribute(string name, float mass)
     {
         this.name = name;
+        this.mass = mass;
     }
-    public virtual void SetAttribute(string name, float mass, Vector3 vel)
+
+
+    public void SetAttribute(string name, Vector3 normal)
     {
         this.name = name;
-
-    }
-
-    public virtual void  GetAttribute(out string name)
-    {
-        name = this.name;
-    }
-
-    public virtual void GetAttribute(out string name, out Vector3 normal, out float height,out float length)
-    {
-        name = this.name;
-        normal = Vector3.zero;
-        height = 0.0f;
-        length = 0.0f;
-    }
-    public virtual void GetAttribute(out string name, out float mass, out Vector3 vel)
-    {
-        name = this.name;
-        mass = 0.0f;
-        vel = Vector3.zero;
-    }
-
-
-}
-
-public class Bevel : Model
-{
-    public Vector3 normal;
-    public float height;
-    public float length;
-
-    public Bevel(Vector3 normal,float height,float length,string name):base(name,ModelType.BEVEL)
-    {
         this.normal = normal;
-        this.height = height;
-        this.length = length;
     }
-    public override string ToString()
+    public void SetAttribute(string name, float mass, Vector3 vel)
     {
-        return base.ToString()+ " height: " + height + " length: " + length + " normal: " + normal;
+        this.name = name;
+        this.mass = mass;
+        this.vel = vel;
+
     }
-    public override void SetAttribute(string name,Vector3 normal, float height, float length)
+
+    public void SetAttribute(string name, float bounciness, BounceCombineType bounceCombineType)
     {
-        base.SetAttribute(name);
-        this.normal = normal;
-        this.height = height;
-        this.length = length;
+        this.name = name;
+        this.bounciness = bounciness;
+        this.bounceCombineType = bounceCombineType;
     }
-    public override void GetAttribute(out string name, out Vector3 normal, out float height, out float length)
+
+
+    public void  GetAttribute(out string name)
+    {
+        name = this.name;
+    }
+
+
+    public void GetAttribute(out string name, out float mass)
+    {
+        name = this.name;
+        mass = this.mass;
+    }
+
+    public void GetAttribute(out string name, out Vector3 normal)
     {
         name = this.name;
         normal = this.normal;
-        height = this.height;
-        length = this.length;
-    }
-}
-
-public class Ball : Model
-{
-    public float mass;
-    public Vector3 vel;
-
-    public Ball(float mass,Vector3 vel, string name) : base(name,ModelType.BALL)
-    {
-        this.mass = mass;
-        this.vel = vel;
-    }
-    public override string ToString()
-    {
-        return base.ToString() + " mass: " + mass + " vel: " + vel;
-    }
-    public override void SetAttribute(string name, float mass, Vector3 vel)
-    {
-        base.SetAttribute(name);
-        this.mass = mass;
-        this.vel = vel;
     }
 
-    public override void GetAttribute(out string name, out float mass, out Vector3 vel)
+    public void GetAttribute(out string name, out float mass, out Vector3 vel)
     {
         name = this.name;
         mass = this.mass;
         vel = this.vel;
     }
+
+    public void GetAttribute(out string name, out  float bounciness, out BounceCombineType bounceCombineType)
+    {
+        name = this.name;
+        bounciness = this.bounciness;
+        bounceCombineType = this.bounceCombineType;
+    }
+
+
 }
 
 public class PhysicsManager : MonoBehaviour {
 
     public Vector3 g;
     public Dictionary<string,Model> models;
+
+    [Range(0.001f, 0.01f)]
+    public float timeStep = 0.005f;
+
+    public float ignoreHitVelValue = 0.01f;
+
+    public bool started;
+
+
     private int bevelCount;
     private int ballCount;
+    private int planeCount;
 
     // Use this for initialization
 
     private void Awake()
     {
+        started = false;
         bevelCount = 0;
         ballCount = 0;
+        planeCount = 0;
         models = new Dictionary<string, Model>();
-
+        Debug.Log("awake physicasManager");
     }
     void Start () {
 	}
@@ -229,6 +243,12 @@ public class PhysicsManager : MonoBehaviour {
 	void Update () {
 		
 	}
+
+
+    public void OnStartButtonClicked()
+    {
+        started = !started;
+    }
 
     public Vector3 CalGravity(float mass)
     {
@@ -297,35 +317,45 @@ public class PhysicsManager : MonoBehaviour {
         model.ChangeForce(forceName, volume);
     }
 
-    public string AddObject(string tag,Vector3 normal,float height,float length)
+    public string AddObject(string tag,float mass, Vector3 normal)
     {
         if(tag == "bevel")
         {
             string _name = "bevel_" + bevelCount.ToString();
-            Bevel bevel= new Bevel(normal,height,length,_name);
+            Model bevel = new Model(_name, mass, normal, ModelType.BEVEL);
             Debug.Log(bevel.ToString());
             Debug.Log("add "+_name);
             bevelCount++;
+            Debug.Log(models);
             models.Add(_name,bevel);
+            return _name;
+        }
+        if (tag == "ball")
+        {
+            string _name = "ball_" + ballCount.ToString();
+            Model ball = new Model(_name, mass, ModelType.BALL);
+            Debug.Log(ball.ToString());
+            Debug.Log("add " + _name);
+            ballCount++;
+            Debug.Log(models);
+            models.Add(_name, ball);
+            return _name;
+        }
+
+        if (tag == "plane")
+        {
+            string _name = "plane_" + planeCount.ToString();
+            Model plane = new Model(_name, mass,normal, ModelType.PLANE);
+            Debug.Log(plane.ToString());
+            Debug.Log("add " + _name);
+            planeCount++;
+            Debug.Log(models);
+            models.Add(_name, plane);
+
             return _name;
         }
         return null;
         
-    }
-
-    public string AddObject(string tag, float mass, Vector3 vel)
-    {
-        if (tag == "ball")
-        {
-            string _name = "ball_" + ballCount.ToString();
-            Ball ball = new Ball(mass, vel, _name);
-            Debug.Log(ball.ToString());
-            Debug.Log("add " + _name);
-            ballCount++;
-            models.Add(_name, ball);
-            return _name;
-        }
-        return null;
     }
 
     public void GetObject(string name, out Model model)
@@ -333,14 +363,43 @@ public class PhysicsManager : MonoBehaviour {
         models.TryGetValue(name, out model);
     }
 
-    public void SetObject(string name, Vector3 normal, float height, float length)
+    public void GetObject(string name, out float mass)
+    {
+        Model model = new Model();
+        models.TryGetValue(name, out model);
+        model.GetAttribute(out name, out mass);
+    }
+
+    public void GetObject(string name, out Vector3 normal)
+    {
+        Model model = new Model();
+        models.TryGetValue(name, out model);
+        model.GetAttribute(out name, out normal);
+    }
+
+    public void GetObject(string name , out float mass, out Vector3 vel)
+    {
+        Model model = new Model();
+        models.TryGetValue(name, out model);
+        model.GetAttribute(out name, out mass,out  vel);
+    }
+
+    public void GetObject(string name, out float bounciness, out BounceCombineType bounceCombineType)
+    {
+        Model model = new Model();
+        models.TryGetValue(name, out model);
+        model.GetAttribute(out name, out bounciness, out bounceCombineType);
+    }
+
+    public void SetObject(string name, Vector3 normal)
     {
         Model model = new Model();
         GetObject(name, out model);
         //Debug.Log(model.ToString());
-        model.SetAttribute(name, normal,height,length);
+        model.SetAttribute(name, normal);
         models[name] = model;
     }
+
     public void SetObject(string name, float mass, Vector3 vel)
     {
         Model model = new Model();
@@ -350,27 +409,49 @@ public class PhysicsManager : MonoBehaviour {
         models[name] = model;
     }
 
-    public Vector3 CalNormal(float mass,Vector3 vel, string giverName, Vector3 sumForce)
+    public void SetObject(string name, float bounciness, BounceCombineType bounceCombineType)
     {
-        Vector3 normal = Vector3.zero;
+        Model model = new Model();
+        GetObject(name, out model);
+        //Debug.Log(model.ToString());
+        model.SetAttribute(name, bounciness, bounceCombineType);
+        models[name] = model;
+    }
+
+    public Vector3 CalNormal(string name, float mass,Vector3 vel, string giverName, Vector3 sumForce)
+    {
+        Vector3 normalForce = Vector3.zero;
         Model model = new Model();
         GetObject(giverName, out model);
+        string temp = "";
+        Vector3 normalDir = Vector3.zero;
         if (model.modelType == ModelType.BEVEL)
         {
-            string temp = "";
-            Vector3 normalDir = Vector3.zero;
-            float height = 0.0f;
-            float length = 0.0f;
-            model.GetAttribute(out temp, out normalDir, out height, out length);
-            float sumForceNormal = Vector3.Dot(sumForce, normalDir);
-            if (Mathf.Abs(Vector3.Dot(vel, normalDir)) <= 0.01f)
-            {
-                normal = -sumForceNormal * normalDir;
+            model.GetAttribute(out temp, out normalDir);
 
-            }
         }
+        else if (model.modelType == ModelType.PLANE)
+        {
+            model.GetAttribute(out temp, out normalDir);
 
-        return normal;
+        }
+        else
+        {
+            Debug.Log("CalNormal: No Valid Normal Vector");
+            return normalForce;
+        }
+        float sumForceNormal = Vector3.Dot(sumForce, normalDir);
+        if(Mathf.Abs(Vector3.Dot(vel, normalDir)) <= ignoreHitVelValue)
+        {
+            normalForce = -sumForceNormal * normalDir;
+
+        }
+        else
+        {
+            Debug.Log("CalNormal: More Than Ignore Hit Value");
+            return normalForce;
+        }
+        return normalForce;
     }
 
 
@@ -401,7 +482,7 @@ public class PhysicsManager : MonoBehaviour {
                     float mass = 0;
                     Vector3 vel = Vector3.zero;
                     model.GetAttribute(out temp, out mass, out vel);
-                    f.volume = CalNormal(mass,vel, f.giverName,sum);
+                    f.volume = CalNormal(name, mass,vel, f.giverName,sum);
                     sum += f.volume;
                 }
             }
@@ -411,5 +492,39 @@ public class PhysicsManager : MonoBehaviour {
             }
         }
         return sum;
+    }
+
+    public Vector3 CalHit(string name, string otherName)
+    {
+
+        Model self = new Model();
+        GetObject(name, out self);
+        Model other = new Model();
+        GetObject(otherName, out other);
+        BounceCombineType bounceCombineType = self.bounceCombineType.CompareTo(other.bounceCombineType) > 0 ? self.bounceCombineType : other.bounceCombineType;
+        float bounciness = 0.0f;
+        if (bounceCombineType == BounceCombineType.Average)
+        {
+            bounciness = (self.bounciness + other.bounciness) / 2.0f;
+        }
+
+        if (bounceCombineType == BounceCombineType.Minimum)
+        {
+            bounciness = Mathf.Min(self.bounciness + other.bounciness);
+
+        }
+
+        if (bounceCombineType == BounceCombineType.Multiply)
+        {
+            bounciness = self.bounciness * other.bounciness;
+        }
+
+        if (bounceCombineType == BounceCombineType.Maximum)
+        {
+            bounciness = Mathf.Max(self.bounciness + other.bounciness);
+
+        }
+
+
     }
 }
