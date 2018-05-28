@@ -15,7 +15,7 @@ public class BallController : MonoBehaviour {
 
     public BounceCombineType bounceCombineType;
 
-    public Vector3 vel = Vector3.zero;
+    private Vector3 vel = Vector3.zero;
 
 
     private Vector3 initVel;
@@ -28,7 +28,7 @@ public class BallController : MonoBehaviour {
 	void Start () {
         initPos = transform.position;
         initVel = vel;
-        name = physicsManager.AddObject("ball", mass, vel);
+        name = physicsManager.AddObject("ball", mass, Vector3.zero);
         physicsManager.SetObject(name, mass, vel);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
         physicsManager.AddForce(name, "Earth", ForceType.GRAVITY, physicsManager.CalGravity(mass));
@@ -47,14 +47,15 @@ public class BallController : MonoBehaviour {
         {
             if (physicsManager.started)
             {
-                physicsManager.SetObject(name, mass, vel);
+                physicsManager.GetObject(name, out mass, out vel);
                 transform.position += vel * physicsManager.timeStep;
                 Vector3 sumForce = physicsManager.CalForce(name);
                 physicsManager.GetObject(name, out mass, out vel);
                 //Debug.Log("sunForce: " + sumForce);
                 Vector3 acc = physicsManager.CalAcc(sumForce, mass);
                 vel += acc * physicsManager.timeStep;
-                Debug.Log("vel: " + vel);
+                physicsManager.SetObject(name, mass, vel);
+                //Debug.Log("vel: " + vel);
             }
             if (!physicsManager.started)
             {
@@ -73,15 +74,27 @@ public class BallController : MonoBehaviour {
         if (other.gameObject.tag == "bevel")
         {
             Debug.Log("Create Normal Force");
-            vel = physicsManager.CalHit(name, other.gameObject.transform.parent.gameObject.name);
+            Vector3 v2;
+            physicsManager.CalHit(name, other.gameObject.transform.parent.gameObject.name,transform.position, other.gameObject.transform.parent.gameObject.transform.position, out vel, out v2);
+            Debug.Log("Hit Calculate: v1: " + vel + " v2: " + v2);
             physicsManager.AddForce(name, other.gameObject.transform.parent.gameObject.name,ForceType.NORMAL);
         }
         if (other.gameObject.tag == "plane")
         {
             Debug.Log("Create Normal Force");
-            vel = physicsManager.CalHit(name, other.gameObject.name);
+            Vector3 v2;
+            physicsManager.CalHit(name, other.gameObject.name,transform.position,other.gameObject.transform.position,out vel,out v2);
+            Debug.Log("Hit Calculate: v1: " + vel + " v2: " + v2);
 
             physicsManager.AddForce(name, other.gameObject.name, ForceType.NORMAL);
+        }
+        if (other.gameObject.tag == "ball")
+        {
+            tag = "none";
+            Debug.Log("Hit two balls");
+            Vector3 v2;
+            physicsManager.CalHit(name, other.gameObject.name, transform.position, other.gameObject.transform.position, out vel, out v2);
+            Debug.Log("Hit Calculate: v1: " + vel + " v2: " + v2);
         }
     }
     private void OnTriggerExit(Collider other)
@@ -96,6 +109,10 @@ public class BallController : MonoBehaviour {
             Debug.Log("Remove Normal Force");
 
             physicsManager.RemoveForce(name, other.gameObject.name, ForceType.NORMAL);
+        }
+        if (other.gameObject.tag == "ball")
+        {
+            tag = "ball";
         }
 
     }

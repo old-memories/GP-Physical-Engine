@@ -13,9 +13,10 @@ public enum ForceType
 
 public enum ModelType
 {
-    BEVEL,
+    NONE,
     BALL,
     PLANE,
+    BEVEL,
 }
 
 public enum BounceCombineType
@@ -138,7 +139,7 @@ public class Model
 
     public new string ToString()
     {
-        return "name: "+name;
+        return "name: " + name + " mass: " + mass + " bounciness :" + bounciness +"bounce combine type: "+bounceCombineType+ " normal: " + normal;
     }
     public void SetAttribute(string name)
     {
@@ -216,7 +217,7 @@ public class PhysicsManager : MonoBehaviour {
     [Range(0.001f, 0.01f)]
     public float timeStep = 0.005f;
 
-    public float ignoreHitVelValue = 0.01f;
+    public float ignoreVectorValue;
 
     public bool started;
 
@@ -441,14 +442,14 @@ public class PhysicsManager : MonoBehaviour {
             return normalForce;
         }
         float sumForceNormal = Vector3.Dot(sumForce, normalDir);
-        if(Mathf.Abs(Vector3.Dot(vel, normalDir)) <= ignoreHitVelValue)
+        if(Mathf.Abs(Vector3.Dot(vel, normalDir)) <= ignoreVectorValue)
         {
             normalForce = -sumForceNormal * normalDir;
 
         }
         else
         {
-            Debug.Log("CalNormal: More Than Ignore Hit Value");
+            Debug.Log("CalNormal: Vel: "+vel+" More Than Ignore Hit Value. GiverName: "+giverName+" NormalDir: "+normalDir);
             return normalForce;
         }
         return normalForce;
@@ -494,7 +495,7 @@ public class PhysicsManager : MonoBehaviour {
         return sum;
     }
 
-    public Vector3 CalHit(string name, string otherName)
+    public void CalHit(string name, string otherName,Vector3 p1, Vector3 p2, out Vector3 v1,out Vector3 v2)
     {
 
         Model self = new Model();
@@ -510,7 +511,7 @@ public class PhysicsManager : MonoBehaviour {
 
         if (bounceCombineType == BounceCombineType.Minimum)
         {
-            bounciness = Mathf.Min(self.bounciness + other.bounciness);
+            bounciness = Mathf.Min(self.bounciness , other.bounciness);
 
         }
 
@@ -521,10 +522,269 @@ public class PhysicsManager : MonoBehaviour {
 
         if (bounceCombineType == BounceCombineType.Maximum)
         {
-            bounciness = Mathf.Max(self.bounciness + other.bounciness);
+            bounciness = Mathf.Max(self.bounciness , other.bounciness);
+
+        }
+       
+
+        float m1 = self.mass;
+        float m2 = other.mass;
+        Vector3 v10 = self.vel;
+        Vector3 v20 = other.vel;
+
+
+        Debug.Log("self: " + self.ToString());
+        Debug.Log("other: " + other.ToString());
+        Debug.Log("self v10: " + v10);
+        Debug.Log("other v20: " + v20);
+
+        Vector3 normal1 = self.normal;
+        Vector3 normal2 = other.normal;
+        Debug.Log("p1: " + p1 + " p2: " + p2);
+        Vector3 dir = p1 - p2;
+        Debug.Log("dir: " + dir.x +" "+ dir.y +" "+ dir.z);
+        dir = AlignVector3(dir, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+        dir = Vector3.Normalize(dir);
+
+
+        Debug.Log("CalHit: dir:" + dir);
+
+        if (normal1 == Vector3.zero && normal2 == Vector3.zero)
+        {
+            if (v10 == Vector3.zero)
+            {
+
+                Vector3 v20_normal = Vector3.Dot(v20, dir) * dir;
+                //Debug.Log("v20_normal: " + v20_normal);
+                Vector3 v20_else = v20 - v20_normal;
+                v20 = v20 - v20_else;
+                //Debug.Log("v20: " + v20 + " v20_else: " + v20_else);
+                if (v10 == v20)
+                {
+                    v1 = v10;
+                    v2 = v20+ v20_else;
+                    SetObject(name, m1, v1);
+                    SetObject(otherName, m2, v2);
+                    return;
+
+                }
+                if (m2 < 0)
+                {
+                    Debug.Log("CalHit: m2>>m1");
+                    v1 = v20 + v20 * bounciness - v10 * bounciness;
+                    v2 = v20;
+                }
+                else
+                {
+                    Debug.Log("CalHit: m2~m1");
+                    v1 = (m2 * v20 * (1.0f + bounciness) + m1 * v10 - m2 * v10 * bounciness) / (m1 + m2);
+                    v2 = (m1 * v10 * (1.0f + bounciness) + m2 * v20 - m1 * v20 * bounciness) / (m1 + m2);
+                }
+                
+                v2 = v2 + v20_else;
+              
+
+
+            }
+            else if (v20 == Vector3.zero)
+            {
+                Vector3 v10_normal = Vector3.Dot(v10, dir) * dir;
+                Vector3 v10_else = v10 - v10_normal;
+                v10 = v10 - v10_else;
+                if (v10 == v20)
+                {
+                    v1 = v10+v10_else;
+                    v2 = v20;
+                    SetObject(name, m1, v1);
+                    SetObject(otherName, m2, v2);
+                    return;
+
+                }
+                if (m2 < 0)
+                {
+                    Debug.Log("CalHit: m2>>m1");
+                   
+                        v1 = v20 + v20 * bounciness - v10 * bounciness;
+                        v2 = v20;
+                    
+
+                }
+                else
+                {
+                    Debug.Log("CalHit: m2~m1");
+
+                    v1 = (m2 * v20 * (1.0f + bounciness) + m1 * v10 - m2 * v10 * bounciness) / (m1 + m2);
+                        v2 = (m1 * v10 * (1.0f + bounciness) + m2 * v20 - m1 * v20 * bounciness) / (m1 + m2);
+                    
+
+
+                }
+                v1 = v1 + v10_else;
+            }
+            else
+            {
+                Vector3 velDir = v20 - v10;
+                velDir = AlignVector3(velDir, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+                velDir = Vector3.Normalize(velDir);
+                Debug.Log("velDir: " + velDir);
+                Debug.Log("dir: " + dir);
+
+                if (Mathf.Abs(Vector3.Angle(velDir, dir)) > ignoreVectorValue)
+                {
+                    Debug.Log("CalHit: two velocities not supported");
+                    v1 = self.vel;
+                    v2 = other.vel;
+                }
+                else
+                {
+
+                    if (v10 == v20)
+                    {
+                        v1 = v10;
+                        v2 = v20;
+                        SetObject(name, m1, v1);
+                        SetObject(otherName, m2, v2);
+                        return;
+
+                    }
+                    if (m2 < 0)
+                    {
+                        Debug.Log("CalHit: m2>>m1");
+
+                        v1 = v20 + v20 * bounciness - v10 * bounciness;
+                        v2 = v20;
+
+
+                    }
+                    else
+                    {
+                        Debug.Log("CalHit: m2~m1");
+
+                        v1 = (m2 * v20 * (1.0f + bounciness) + m1 * v10 - m2 * v10 * bounciness) / (m1 + m2);
+                        v2 = (m1 * v10 * (1.0f + bounciness) + m2 * v20 - m1 * v20 * bounciness) / (m1 + m2);
+
+
+
+                    }
+                  
+
+                }
+
+            }
+        }
+        else if (normal1 == Vector3.zero)
+        {
+            if(v20 != Vector3.zero)
+            {
+                Debug.Log("CalHit: one normal with velocity not supported");
+                v1 = self.vel;
+                v2 = other.vel;
+            }
+            Vector3 normalDir = AlignVector3(normal2, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+            ;
+            Vector3 v10_normal = Vector3.Dot(v10, normalDir) * normalDir;
+            Vector3 v10_else = v10 - v10_normal;
+            v10 = v10 - v10_else;
+            if (v10 == v20)
+            {
+                v1 = v10+ v10_else;
+                v2 = v20;
+                SetObject(name, m1, v1);
+                SetObject(otherName, m2, v2);
+                return;
+
+            }
+            if (m2 < 0)
+            {
+                Debug.Log("CalHit: m2>>m1");
+               
+                    v1 = v20 + v20 * bounciness - v10 * bounciness;
+                    v2 = v20;
+                
+
+            }
+            else
+            {
+                Debug.Log("CalHit: m2~m1");
+
+                v1 = (m2 * v20 * (1.0f + bounciness) + m1 * v10 - m2 * v10 * bounciness) / (m1 + m2);
+                    v2 = (m1 * v10 * (1.0f + bounciness) + m2 * v20 - m1 * v20 * bounciness) / (m1 + m2);
+                
+
+
+            }
+            v1 = v1 + v10_else;
 
         }
 
+        else if(normal2 == Vector3.zero)
+        {
+            if (v10 != Vector3.zero)
+            {
+                Debug.Log("CalHit: one normal with velocity not supported");
+                v1 = self.vel;
+                v2 = other.vel;
+            }
+            Vector3 normalDir = AlignVector3(normal1, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+            Vector3 v20_normal = Vector3.Dot(v20, normalDir) * normalDir;
+            Vector3 v20_else = v20 - v20_normal;
+            v20 = v20 - v20_else;
+            if (v10 == v20)
+            {
+                v1 = v10;
+                v2 = v20+v20_else;
+                SetObject(name, m1, v1);
+                SetObject(otherName, m2, v2);
+                return;
 
+            }
+            if (m2 < 0)
+            {
+                Debug.Log("CalHit: m2>>m1");
+                v1 = v20 + v20 * bounciness - v10 * bounciness;
+                v2 = v20;
+            }
+            else
+            {
+                Debug.Log("CalHit: m2~m1");
+
+                v1 = (m2 * v20 * (1.0f + bounciness) + m1 * v10 - m2 * v10 * bounciness) / (m1 + m2);
+                v2 = (m1 * v10 * (1.0f + bounciness) + m2 * v20 - m1 * v20 * bounciness) / (m1 + m2);
+            }
+            v2 = v2 + v20_else;
+        }
+        else
+        {
+            Debug.Log("CalHit: two normal not supported");
+            v1 = self.vel;
+            v2 = other.vel;
+        }
+        Debug.Log("self v1: " + v1);
+        Debug.Log("other v2: " + v2);
+        SetObject(name, m1, v1);
+        SetObject(otherName, m2, v2);
+
+
+    }
+
+    public Vector3 AlignVector3(Vector3 v, Vector3 align)
+    {
+        if (Mathf.Abs(v.x) < align.x)
+        {
+            Debug.Log("v.x : " + v.x);
+            v.x = 0;
+        }
+        if (Mathf.Abs(v.y) < align.y)
+        {
+            Debug.Log("v.y : " + v.y);
+
+            v.y = 0;
+        }
+        if (Mathf.Abs(v.z) < align.z)
+        {
+            Debug.Log("v.z : " + v.z);
+            v.z = 0;
+        }
+        return v;
     }
 }

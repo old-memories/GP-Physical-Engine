@@ -36,7 +36,7 @@ public class PlaneController : MonoBehaviour {
     void Start () {
         initScale = transform.localScale;
         normal = CalNormal();
-        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * initScale);
+        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal)+ Vector3.Dot(initScale, normal) * normal;
         name = physicsManager.AddObject("plane", planeMass, normal);
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name,bounciness,bounceCombineType);
@@ -47,8 +47,9 @@ public class PlaneController : MonoBehaviour {
     // Update is called once per frame
     void Update () {
         normal = CalNormal();
-        transform.localScale = scale*(initScale - Vector3.Dot(initScale, normal) * initScale);
+        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal) + Vector3.Dot(initScale, normal) * normal;
         physicsManager.SetObject(name, normal);
+        physicsManager.SetObject(name, bounciness, bounceCombineType);
 
     }
 

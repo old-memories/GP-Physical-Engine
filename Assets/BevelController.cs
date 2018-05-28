@@ -57,6 +57,7 @@ public class BevelController : MonoBehaviour {
         normal = CalNormal();
         //Debug.Log("normal: " + normal);
         physicsManager.SetObject(name, normal);
+        physicsManager.SetObject(name, bounciness, bounceCombineType);
 
     }
 
