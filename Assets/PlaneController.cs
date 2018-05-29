@@ -32,6 +32,11 @@ public class PlaneController : MonoBehaviour {
         return Vector3.Normalize(Vector3.Cross(v1, v2));
     }
 
+    private void Awake()
+    {
+        physicsManager = transform.parent.GetComponent<PhysicsManager>();
+    }
+
     // Use this for initialization
     void Start () {
         initScale = transform.localScale;

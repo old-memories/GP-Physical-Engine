@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public enum ForceType
 {
@@ -209,7 +210,8 @@ public class Model
 
 }
 
-public class PhysicsManager : MonoBehaviour {
+public class PhysicsManager : MonoBehaviour
+{
 
     public Vector3 g;
     public Dictionary<string,Model> models;
@@ -220,6 +222,28 @@ public class PhysicsManager : MonoBehaviour {
     public float ignoreVectorValue;
 
     public bool started;
+
+    public Color selectedColor;
+    public Color oldColor;
+
+    public GameObject selectedGameObject;
+
+    public GameObject ball;
+
+
+    public string inputForward;
+    public string inputBack;
+    public string inputLeft;
+    public string inputRight;
+    public string inputUp;
+    public string inputDown;
+
+    public float inputSensitive = 0.1f;
+
+
+    public Camera ca;
+    private Ray ra;
+    private RaycastHit hit;
 
 
     private int bevelCount;
@@ -234,21 +258,156 @@ public class PhysicsManager : MonoBehaviour {
         bevelCount = 0;
         ballCount = 0;
         planeCount = 0;
+        selectedGameObject = gameObject;
         models = new Dictionary<string, Model>();
         Debug.Log("awake physicasManager");
     }
     void Start () {
-	}
-	
-	// Update is called once per frame
-	void Update () {
-		
-	}
+        StartCoroutine(MouseMove());
+        StartCoroutine(SelectedGameObjectControl());
 
+    }
+
+    // Update is called once per frame
+    void Update () {
+       
+    }
+
+
+
+    IEnumerator MouseMove()
+    {
+        while (true)
+        {
+            if (Input.GetMouseButtonDown(0))
+            {
+                ra = ca.ScreenPointToRay(Input.mousePosition);
+                //如果点击了一个物体
+                if (Physics.Raycast(ra, out hit))
+                {
+                    //如果原来已选中，恢复selectedGameObject颜色
+                    if (selectedGameObject.name != name)
+                    {
+                        //选中的是斜面
+                        if (selectedGameObject.tag == "bevel")
+                        {
+                            foreach (var child in selectedGameObject.GetComponentsInChildren<Transform>())
+                            {
+                                //对斜面所有子物体遍历
+                                if (child.gameObject.tag == "bevel" && child.gameObject.name != selectedGameObject.name)
+                                {
+                                    child.gameObject.GetComponent<MeshRenderer>().material.color = oldColor;
+                                }
+                            }
+                        }
+                        //选中的不是斜面
+                        else
+                        {
+                            selectedGameObject.GetComponent<MeshRenderer>().material.color = oldColor;
+                        }
+                    }
+                    //如果原来未选中
+
+
+
+                    //记录原颜色, 更新选中物体颜色, 把selectedGameObject覆盖掉
+
+                    //如果选中的是斜面（的子物体）
+                    if (hit.collider.gameObject.tag == "bevel")
+                    {
+                        //对斜面所有子物体遍历
+                        foreach (var child in hit.collider.transform.parent.gameObject.GetComponentsInChildren<Transform>())
+                        {
+                            if (child.gameObject.tag == "bevel" && child.gameObject.name != hit.collider.transform.parent.gameObject.name)
+                            {
+                                oldColor = child.gameObject.GetComponent<MeshRenderer>().material.color;
+                                child.gameObject.GetComponent<MeshRenderer>().material.color = selectedColor;
+                            }
+                        }
+
+                        selectedGameObject = hit.collider.transform.parent.gameObject;
+
+                    }
+                    //选中的不是斜面
+                    else
+                    {
+                        oldColor = hit.collider.gameObject.GetComponent<MeshRenderer>().material.color;
+                        hit.collider.gameObject.GetComponent<MeshRenderer>().material.color = selectedColor;
+                        selectedGameObject = hit.collider.gameObject;
+
+                    }
+                   
+
+                }
+                //如果没有点击到物体
+                else
+                {
+                    //如果已经选中了物体，恢复selectedGameObject颜色
+                    if (selectedGameObject.name != gameObject.name)
+                    {
+                        if (selectedGameObject.tag == "bevel")
+                        {
+                            foreach (var child in selectedGameObject.GetComponentsInChildren<Transform>())
+                            {
+                                if (child.gameObject.tag == "bevel" && child.gameObject.name != selectedGameObject.name)
+                                {
+                                    child.gameObject.GetComponent<MeshRenderer>().material.color = oldColor;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            selectedGameObject.GetComponent<MeshRenderer>().material.color = oldColor;
+
+                        }
+                        //恢复未选中状态
+                        selectedGameObject = gameObject;
+
+                    }
+                    //如果未选中物体
+                }
+
+            }
+            yield return null;
+
+        }
+    }
+
+    IEnumerator SelectedGameObjectControl()
+    {
+        while (true)
+        {
+            float moveForward = (Input.GetKey(inputForward) ? 1.0f : 0) - (Input.GetKey(inputBack) ? 1.0f : 0);
+            float moveRight = (Input.GetKey(inputRight) ? 1.0f : 0) - (Input.GetKey(inputLeft) ? 1.0f : 0);
+            float moveUp = (Input.GetKey(inputUp) ? 1.0f : 0) - (Input.GetKey(inputDown) ? 1.0f : 0);
+            //如果是未选中
+            if (selectedGameObject==gameObject)
+            {
+               
+
+
+            }
+            //选中了物体
+            else
+            {
+                if (!started)
+                {
+                    selectedGameObject.transform.Translate(new Vector3(moveRight, moveUp, moveForward) * inputSensitive);
+                }
+            }
+            yield return null;
+           
+        }
+    }
 
     public void OnStartButtonClicked()
     {
         started = !started;
+    }
+
+    public void OnNewBallButtonClicked()
+    {
+        Instantiate(ball,transform);
     }
 
     public Vector3 CalGravity(float mass)
@@ -502,6 +661,7 @@ public class PhysicsManager : MonoBehaviour {
         GetObject(name, out self);
         Model other = new Model();
         GetObject(otherName, out other);
+        //根据两个物体的恢复系数组合类型的优先级决定最后的恢复系数组合类型
         BounceCombineType bounceCombineType = self.bounceCombineType.CompareTo(other.bounceCombineType) > 0 ? self.bounceCombineType : other.bounceCombineType;
         float bounciness = 0.0f;
         if (bounceCombineType == BounceCombineType.Average)
@@ -549,8 +709,10 @@ public class PhysicsManager : MonoBehaviour {
 
         Debug.Log("CalHit: dir:" + dir);
 
+        //小球模型没有表面法向量（设为0），所以这里是两个小球碰撞的情况
         if (normal1 == Vector3.zero && normal2 == Vector3.zero)
         {
+            //一动一静
             if (v10 == Vector3.zero)
             {
 
@@ -586,6 +748,7 @@ public class PhysicsManager : MonoBehaviour {
 
 
             }
+            //一动一静
             else if (v20 == Vector3.zero)
             {
                 Vector3 v10_normal = Vector3.Dot(v10, dir) * dir;
@@ -621,20 +784,22 @@ public class PhysicsManager : MonoBehaviour {
                 }
                 v1 = v1 + v10_else;
             }
+            //两动，只支持一种碰撞情况
             else
             {
-                Vector3 velDir = v20 - v10;
-                velDir = AlignVector3(velDir, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
-                velDir = Vector3.Normalize(velDir);
-                Debug.Log("velDir: " + velDir);
-                Debug.Log("dir: " + dir);
+                v10 = AlignVector3(v10, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+                v20 = AlignVector3(v20, new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue));
+                float angle1 = Mathf.Acos(Mathf.Abs(Vector3.Dot(Vector3.Normalize(v10), dir)));
+                float angle2 = Mathf.Acos(Mathf.Abs(Vector3.Dot(Vector3.Normalize(v20), dir)));
 
-                if (Mathf.Abs(Vector3.Angle(velDir, dir)) > ignoreVectorValue)
+                //两个小球都有速度且至少一个速度不在连心线方向上，无法计算
+                if (angle1 > ignoreVectorValue|| angle2 > ignoreVectorValue)
                 {
                     Debug.Log("CalHit: two velocities not supported");
                     v1 = self.vel;
                     v2 = other.vel;
                 }
+                //两个小球都有速度且都在连心线上,即一维的碰撞
                 else
                 {
 
@@ -672,6 +837,7 @@ public class PhysicsManager : MonoBehaviour {
 
             }
         }
+        //小球碰表面
         else if (normal1 == Vector3.zero)
         {
             if(v20 != Vector3.zero)
@@ -716,8 +882,9 @@ public class PhysicsManager : MonoBehaviour {
             v1 = v1 + v10_else;
 
         }
+        //小球碰表面
 
-        else if(normal2 == Vector3.zero)
+        else if (normal2 == Vector3.zero)
         {
             if (v10 != Vector3.zero)
             {
@@ -767,6 +934,7 @@ public class PhysicsManager : MonoBehaviour {
 
     }
 
+    //忽略小的误差
     public Vector3 AlignVector3(Vector3 v, Vector3 align)
     {
         if (Mathf.Abs(v.x) < align.x)
@@ -787,4 +955,6 @@ public class PhysicsManager : MonoBehaviour {
         }
         return v;
     }
+
+    
 }

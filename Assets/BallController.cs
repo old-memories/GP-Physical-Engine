@@ -20,14 +20,19 @@ public class BallController : MonoBehaviour {
 
     private Vector3 initVel;
     private Vector3 initPos;
+    private bool started;
+
+    private void Awake()
+    {
+        physicsManager = transform.parent.GetComponent<PhysicsManager>();
+    }
 
 
-    
-    
     // Use this for initialization
-	void Start () {
+    void Start () {
         initPos = transform.position;
         initVel = vel;
+        started = false;
         name = physicsManager.AddObject("ball", mass, Vector3.zero);
         physicsManager.SetObject(name, mass, vel);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
@@ -47,6 +52,7 @@ public class BallController : MonoBehaviour {
         {
             if (physicsManager.started)
             {
+                started = true;
                 physicsManager.GetObject(name, out mass, out vel);
                 transform.position += vel * physicsManager.timeStep;
                 Vector3 sumForce = physicsManager.CalForce(name);
@@ -57,8 +63,9 @@ public class BallController : MonoBehaviour {
                 physicsManager.SetObject(name, mass, vel);
                 //Debug.Log("vel: " + vel);
             }
-            if (!physicsManager.started)
+            if (!physicsManager.started && started)
             {
+                started = false;
                 transform.position = initPos;
                 vel = initVel;
                 physicsManager.SetObject(name, mass, vel);

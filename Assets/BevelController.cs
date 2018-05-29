@@ -33,7 +33,11 @@ public class BevelController : MonoBehaviour {
         return Vector3.Normalize(Vector3.Cross(v1, v2));
     }
 
-    
+    private void Awake()
+    {
+        physicsManager = transform.parent.GetComponent<PhysicsManager>();
+    }
+
 
     // Use this for initialization
     void Start () {
@@ -43,8 +47,8 @@ public class BevelController : MonoBehaviour {
         angle = Mathf.Atan2(transform.localScale.y,transform.localScale.z);
 
         normal = CalNormal();
-        //Debug.Log("normal: "+normal);
         name = physicsManager.AddObject("bevel", bevelMass, normal);
+        
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
     }
