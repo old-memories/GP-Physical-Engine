@@ -14,6 +14,10 @@ public class RopeController : MonoBehaviour {
 
     public GameObject stdNode;
     //public Transform shooter;
+
+    private Vector3[] points;
+
+
     private float distance;
 
     public int target = 0;
@@ -25,6 +29,8 @@ public class RopeController : MonoBehaviour {
     // Use this for initialization
     void Start () {
         nodes = new List<GameObject>();
+
+        points = new Vector3[nodeCount];
         //pos = new List<Vector3>();
 
         lineRen = GetComponent<LineRenderer>();
@@ -33,10 +39,14 @@ public class RopeController : MonoBehaviour {
         {
             GameObject tmp = Instantiate(stdNode) as GameObject;
             tmp.transform.parent = transform;
+            tmp.name = tmp.transform.parent.gameObject.name + "_node_" + i.ToString();
             nodes.Add(tmp);
             //pos.Add(tmp.transform.position);
         }
-        addForce = new Vector3(0.05f, 0, 0);
+         for (int i = 0; i < nodeCount; i++)
+        {
+            points[i] = nodes[i].transform.position;
+        }
 
         StartCoroutine(CheckAllow());
     }
@@ -45,13 +55,19 @@ public class RopeController : MonoBehaviour {
 	void Update () {
         //CheckMoving();
         //CheckAllow();
-        
 
-        var points = new Vector3[nodeCount];
+        for (int i = 0; i < nodeCount; i++)
+        {
+            nodes[i].transform.position = points[i];
+        }
+
         for (int i = 0; i < nodeCount; i++)
         {
             points[i] = nodes[i].transform.position;
         }
+        points[target] += new Vector3(0.1f,0, 0.1f);
+
+       
         lineRen.SetPositions(points);
 
         lineRen.startWidth = stdNode.transform.localScale.x;
@@ -96,42 +112,42 @@ public class RopeController : MonoBehaviour {
 
             for (int i = target - 1; i >= 0; --i)
             {
-                distance = Vector3.Magnitude(nodes[i].transform.position - nodes[i + 1].transform.position);
+                distance = Vector3.Magnitude(points[i] - points[i+1]);
                 if (distance > HighAllow * HighAllow)
                 {
                     //Debug.Log(distance);
-                    nodes[i].transform.position = Vector3.Lerp(nodes[i].transform.position, nodes[i + 1].transform.position, (distance - HighAllow) / distance);
+                    points[i] = Vector3.Lerp(points[i], points[i+1], (distance - HighAllow) / distance);
                     //Debug.Log(Vector3.Magnitude(nodes[i].transform.position - nodes[i + 1].transform.position));
                 }
                 if (distance < LowAllow * LowAllow && distance != 0)
                 {
-                    Vector3 tmp = nodes[i + 1].transform.position - nodes[i].transform.position;
+                    Vector3 tmp = points[i+1] - points[i];
                     tmp *= LowAllow / distance;
-                    tmp += nodes[i].transform.position;
-                    nodes[i].transform.position = tmp;
+                    tmp += points[i];
+                    points[i] = tmp;
                 }
             }
             for (int i = target + 1; i < nodeCount; i++)
             {
-                distance = Vector3.Magnitude(nodes[i].transform.position - nodes[i - 1].transform.position);
+                distance = Vector3.Magnitude(points[i] - points[i-1]);
                 if (distance > HighAllow * HighAllow)
                 {
                     //Debug.Log(distance);
 
-                    nodes[i].transform.position = Vector3.Lerp(nodes[i].transform.position, nodes[i - 1].transform.position, (distance - HighAllow) / distance);
+                    points[i] = Vector3.Lerp(points[i], points[i-1], (distance - HighAllow) / distance);
 
                     //Debug.Log(Vector3.Magnitude(nodes[i].transform.position - nodes[i - 1].transform.position));
 
                 }
                 if (distance < LowAllow * LowAllow && distance != 0)
                 {
-                    Vector3 tmp = nodes[i - 1].transform.position - nodes[i].transform.position;
+                    Vector3 tmp = points[i-1] - points[i];
                     //Debug.Log(tmp);
                     tmp *= LowAllow / distance;
                     //Debug.Log(tmp);
-                    tmp += nodes[i].transform.position;
+                    tmp += points[i];
                     //Debug.Log(tmp);
-                    nodes[i].transform.position = tmp;
+                    points[i] = tmp;
                 }
             }
             //nodes[target].transform.position += addForce;
@@ -139,7 +155,7 @@ public class RopeController : MonoBehaviour {
 
             //Debug.Log(Vector3.Magnitude(nodes[0].transform.position - nodes[nodeCount - 1].transform.position));
 
-            yield return new WaitForSeconds(0.01f);
+            yield return new WaitForEndOfFrame();
 
         }
 
