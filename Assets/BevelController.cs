@@ -42,9 +42,9 @@ public class BevelController : MonoBehaviour {
     // Use this for initialization
     void Start () {
         initPosY = transform.localPosition.y;
-        transform.localScale = new Vector3(transform.localScale.x, scale*Mathf.Tan(angle), scale);
-        transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
-        angle = Mathf.Atan2(transform.localScale.y,transform.localScale.z);
+        //transform.localScale = new Vector3(transform.localScale.x, scale*Mathf.Tan(angle), scale);
+        //transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
+        //angle = Mathf.Atan2(transform.localScale.y,transform.localScale.z);
 
         normal = CalNormal();
         name = physicsManager.AddObject("bevel", bevelMass, normal);
@@ -55,9 +55,9 @@ public class BevelController : MonoBehaviour {
 
     // Update is called once per frame
     void Update () {
-        transform.localScale = new Vector3(transform.localScale.x, scale * Mathf.Tan(angle), scale);
-        transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
-        angle = Mathf.Atan2(transform.localScale.y, transform.localScale.z);
+        //transform.localScale = new Vector3(transform.localScale.x, scale * Mathf.Tan(angle), scale);
+        //transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
+        //angle = Mathf.Atan2(transform.localScale.y, transform.localScale.z);
         normal = CalNormal();
         //Debug.Log("normal: " + normal);
         physicsManager.SetObject(name, normal);
