@@ -19,6 +19,12 @@ public class PlaneController : MonoBehaviour {
 
     public BounceCombineType bounceCombineType;
 
+    [Range(0.0f, 1.0f)]
+    public float friction = 0.0f;
+
+    public FrictionCombineType frictionCombineType;
+
+
 
     [Range(1, 5)]
     public float scale = 1; //ONLY X and Z 
@@ -45,6 +51,7 @@ public class PlaneController : MonoBehaviour {
         name = physicsManager.AddObject("plane", planeMass, normal);
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name,bounciness,bounceCombineType);
+        physicsManager.SetObject(name, friction, frictionCombineType);
 
 
     }
@@ -55,6 +62,8 @@ public class PlaneController : MonoBehaviour {
         transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal) + Vector3.Dot(initScale, normal) * normal;
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
+        physicsManager.SetObject(name, friction, frictionCombineType);
+
 
     }
 

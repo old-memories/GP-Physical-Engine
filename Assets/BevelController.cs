@@ -26,6 +26,12 @@ public class BevelController : MonoBehaviour {
 
     public BounceCombineType bounceCombineType;
 
+    [Range(0.0f, 1.0f)]
+    public float friction = 0.0f;
+
+    public FrictionCombineType frictionCombineType;
+
+
     public Vector3 CalNormal()
     {
         Vector3 v1 = p1.transform.position - p2.transform.position;
@@ -51,6 +57,8 @@ public class BevelController : MonoBehaviour {
         
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
+        physicsManager.SetObject(name, friction, frictionCombineType);
+
     }
 
     // Update is called once per frame
@@ -62,6 +70,8 @@ public class BevelController : MonoBehaviour {
         //Debug.Log("normal: " + normal);
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
+        physicsManager.SetObject(name, friction, frictionCombineType);
+
 
     }
 

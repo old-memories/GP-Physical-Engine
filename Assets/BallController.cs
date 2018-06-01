@@ -15,6 +15,11 @@ public class BallController : MonoBehaviour {
 
     public BounceCombineType bounceCombineType;
 
+    [Range(0.0f, 1.0f)]
+    public float friction = 0.0f;
+
+    public FrictionCombineType frictionCombineType;
+
     private Vector3 vel = Vector3.zero;
 
 
@@ -36,6 +41,7 @@ public class BallController : MonoBehaviour {
         name = physicsManager.AddObject("ball", mass, Vector3.zero);
         physicsManager.SetObject(name, mass, vel);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
+        physicsManager.SetObject(name, friction, frictionCombineType);
         physicsManager.AddForce(name, "Earth", ForceType.GRAVITY, physicsManager.CalGravity(mass));
         StartCoroutine(UpdatePosition());
 	}
@@ -70,6 +76,8 @@ public class BallController : MonoBehaviour {
                 vel = initVel;
                 physicsManager.SetObject(name, mass, vel);
                 physicsManager.SetObject(name, bounciness, bounceCombineType);
+                physicsManager.SetObject(name, friction, frictionCombineType);
+
             }
             yield return new WaitForSeconds(physicsManager.timeStep);
         }
@@ -85,6 +93,8 @@ public class BallController : MonoBehaviour {
             physicsManager.CalHit(name, other.gameObject.transform.parent.gameObject.name,transform.position, other.gameObject.transform.parent.gameObject.transform.position, out vel, out v2);
             Debug.Log("Hit Calculate: v1: " + vel + " v2: " + v2);
             physicsManager.AddForce(name, other.gameObject.transform.parent.gameObject.name,ForceType.NORMAL);
+            physicsManager.AddForce(name, other.gameObject.transform.parent.gameObject.name, ForceType.FRICTION);
+
         }
         if (other.gameObject.tag == "plane")
         {
@@ -94,6 +104,8 @@ public class BallController : MonoBehaviour {
             Debug.Log("Hit Calculate: v1: " + vel + " v2: " + v2);
 
             physicsManager.AddForce(name, other.gameObject.name, ForceType.NORMAL);
+            physicsManager.AddForce(name, other.gameObject.name, ForceType.FRICTION);
+
         }
         if (other.gameObject.tag == "ball")
         {
@@ -110,12 +122,16 @@ public class BallController : MonoBehaviour {
         {
             Debug.Log("Remove Normal Force");
             physicsManager.RemoveForce(name, other.gameObject.transform.parent.gameObject.name, ForceType.NORMAL);
+            physicsManager.RemoveForce(name, other.gameObject.transform.parent.gameObject.name, ForceType.FRICTION);
+
         }
         if (other.gameObject.tag == "plane")
         {
             Debug.Log("Remove Normal Force");
 
             physicsManager.RemoveForce(name, other.gameObject.name, ForceType.NORMAL);
+            physicsManager.RemoveForce(name, other.gameObject.name, ForceType.FRICTION);
+
         }
         if (other.gameObject.tag == "ball")
         {

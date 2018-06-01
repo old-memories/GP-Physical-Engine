@@ -4,7 +4,8 @@ using UnityEngine;
 
 public class GameController : MonoBehaviour {
 
-    public GameObject bevel;
+    public GameObject bevelLeft;
+    public GameObject bevelRight;
     public GameObject plane;
     public GameObject ground;
     public GameObject ball;
@@ -13,21 +14,31 @@ public class GameController : MonoBehaviour {
 
     public float right;
 
-    public BevelController bevelController;
+    public BevelController bevelLeftController;
+    public BevelController bevelRightController;
+
     public PlaneController planeController;
 
-    private Vector3 initBallPos;
+    private Vector3 initBallLeftPos;
+    private Vector3 initBallRightPos;
 
-    private Vector3 initBevelPos;
+    private Vector3 initBevelLeftPos;
+    private Vector3 initBevelRightPos;
 
     private bool newball;
 
 	// Use this for initialization
 	void Start () {
-        bevelController = bevel.GetComponent<BevelController>();
+        bevelLeftController = bevelLeft.GetComponent<BevelController>();
+        bevelRightController = bevelRight.GetComponent<BevelController>();
+
         planeController = plane.GetComponent<PlaneController>();
-        initBallPos = bevel.transform.position + new Vector3(0, 5, 0);
-        initBevelPos = bevel.transform.position;
+        initBevelLeftPos = bevelLeft.transform.position;
+        initBevelRightPos = bevelRight.transform.position;
+        initBallLeftPos = initBevelLeftPos + new Vector3(0, 5, 0);
+        initBallRightPos = initBevelRightPos + new Vector3(0, 5, 0);
+       
+
         newball = false;
         StartCoroutine(MovePlane());
         StartCoroutine(NewBall());
@@ -36,8 +47,11 @@ public class GameController : MonoBehaviour {
     // Update is called once per frame
     void Update () {
         if (newball){
-            bevelController.gameObject.transform.position = initBevelPos+ new Vector3( 0,Random.Range(-2.0f,2.0f) ,0);
-            Instantiate(ball, initBallPos, transform.rotation,transform);
+            bevelLeftController.gameObject.transform.position = initBevelLeftPos + new Vector3( 0,Random.Range(-2.0f,2.0f) ,0);
+            bevelRightController.gameObject.transform.position = initBevelRightPos + new Vector3(0, Random.Range(-2.0f, 2.0f), 0);
+
+            Instantiate(ball, initBallLeftPos, transform.rotation,transform);
+            Instantiate(ball, initBallRightPos, transform.rotation, transform);
             newball = false;
         }
         
@@ -58,7 +72,7 @@ public class GameController : MonoBehaviour {
         while (true)
         {
             newball = true;
-            yield return new WaitForSeconds(3);
+            yield return new WaitForSeconds(5);
         }
       
     }

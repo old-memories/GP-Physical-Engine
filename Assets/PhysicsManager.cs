@@ -9,7 +9,7 @@ public enum ForceType
     GRAVITY,
     NORMAL,
     FRICTION,
-    HIT
+    HIT,
 }
 
 public enum ModelType
@@ -21,6 +21,14 @@ public enum ModelType
 }
 
 public enum BounceCombineType
+{
+    Average,
+    Minimum,
+    Multiply,
+    Maximum,
+}
+
+public enum FrictionCombineType
 {
     Average,
     Minimum,
@@ -74,6 +82,9 @@ public class Model
     public Vector3 vel;
     public float bounciness;
     public BounceCombineType bounceCombineType;
+    public float friction;
+    public FrictionCombineType frictionCombineType;
+
     public Dictionary<string,Force> forces;
 
     public Model()
@@ -91,6 +102,8 @@ public class Model
         this.vel = Vector3.zero;
         this.bounciness = 0;
         this.bounceCombineType = BounceCombineType.Average;
+        this.friction = 0;
+        this.frictionCombineType = FrictionCombineType.Average;
     }
 
     public Model(string name,float mass, Vector3 normal, ModelType modelType)
@@ -103,6 +116,8 @@ public class Model
         this.vel = Vector3.zero;
         this.bounciness = 0;
         this.bounceCombineType = BounceCombineType.Average;
+        this.friction = 0;
+        this.frictionCombineType = FrictionCombineType.Average;
     }
 
 
@@ -136,6 +151,10 @@ public class Model
     {
         if(forces[forceName].needCal==false)
             forces[forceName].volume = volume;
+    }
+    public void  FindForce(string forceName, ref Force f)
+    {
+         f = forces[forceName];
     }
 
     public new string ToString()
@@ -174,6 +193,13 @@ public class Model
         this.bounceCombineType = bounceCombineType;
     }
 
+    public void SetAttribute(string name, float friction, FrictionCombineType frictionCombineType)
+    {
+        this.name = name;
+        this.friction = friction;
+        this.frictionCombineType = frictionCombineType;
+    }
+
 
     public void  GetAttribute(out string name)
     {
@@ -205,6 +231,13 @@ public class Model
         name = this.name;
         bounciness = this.bounciness;
         bounceCombineType = this.bounceCombineType;
+    }
+
+    public void GetAttribute(out string name, out float friction, out FrictionCombineType frictionCombineType)
+    {
+        name = this.name;
+        friction = this.friction;
+        frictionCombineType = this.frictionCombineType;
     }
 
 
@@ -477,6 +510,14 @@ public class PhysicsManager : MonoBehaviour
         model.ChangeForce(forceName, volume);
     }
 
+    public void FindForce(string name, string giverName, ForceType type,ref Force f)
+    {
+        Model model = new Model();
+        GetObject(name, out model);
+        string forceName = type + "_f_" + giverName + "_to_" + name;
+       model.FindForce(forceName,ref f);
+    }
+
     public string AddObject(string tag,float mass, Vector3 normal)
     {
         if(tag == "bevel")
@@ -578,6 +619,17 @@ public class PhysicsManager : MonoBehaviour
         models[name] = model;
     }
 
+    public void SetObject(string name, float friction, FrictionCombineType frictionCombineType)
+    {
+        Model model = new Model();
+        GetObject(name, out model);
+        //Debug.Log(model.ToString());
+        model.SetAttribute(name, friction, frictionCombineType);
+        models[name] = model;
+    }
+
+
+    //计算支持力的方法
     public Vector3 CalNormal(string name, float mass,Vector3 vel, string giverName, Vector3 sumForce)
     {
         Vector3 normalForce = Vector3.zero;
@@ -597,7 +649,7 @@ public class PhysicsManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("CalNormal: No Valid Normal Vector");
+            Debug.Log("CalNormal: No Valid Model Type");
             return normalForce;
         }
         float sumForceNormal = Vector3.Dot(sumForce, normalDir);
@@ -608,50 +660,124 @@ public class PhysicsManager : MonoBehaviour
         }
         else
         {
-            Debug.Log("CalNormal: Vel: "+vel+" More Than Ignore Hit Value. GiverName: "+giverName+" NormalDir: "+normalDir);
+            Debug.Log("CalNormal: GiverName: "+giverName+" Vel: "+vel+" More Than Ignore Hit Value :"+ignoreVectorValue+" in NormalDir: "+normalDir);
             return normalForce;
         }
         return normalForce;
     }
 
+    //计算摩擦力的方法
+    public Vector3 CalFriction(string name, float mass, ref Vector3 vel, string giverName, Vector3 NormalForce, Vector3 sumForce)
+    {
+        Vector3 frictionForce = Vector3.zero;
+        Model self = new Model();
+        GetObject(name, out self);
+        Model giver = new Model();
+        GetObject(giverName, out giver);
 
+        //根据两个物体的摩擦系数组合类型的优先级决定最后的摩擦系数组合类型
+        FrictionCombineType frictionCombineType = self.frictionCombineType.CompareTo(giver.frictionCombineType) > 0 ? self.frictionCombineType : giver.frictionCombineType;
+        float friction = 0.0f;
+        if (frictionCombineType == FrictionCombineType.Average)
+        {
+            friction = (self.friction + giver.friction) / 2.0f;
+        }
+
+        if (frictionCombineType == FrictionCombineType.Minimum)
+        {
+            friction = Mathf.Min(self.friction, giver.friction);
+
+        }
+
+        if (frictionCombineType == FrictionCombineType.Multiply)
+        {
+            friction = self.friction * giver.friction;
+        }
+
+        if (frictionCombineType == FrictionCombineType.Maximum)
+        {
+            friction = Mathf.Max(self.friction, giver.friction);
+
+        }
+
+        Vector3 giverVel = giver.vel;
+        Debug.Log(Vector3.Magnitude(friction * NormalForce));
+        Debug.Log(Vector3.Magnitude(sumForce + NormalForce));
+        if (AlignVector3((giverVel-vel), new Vector3(ignoreVectorValue, ignoreVectorValue, ignoreVectorValue)) == Vector3.zero 
+            && Vector3.Magnitude(friction*NormalForce)>= Vector3.Magnitude(sumForce+NormalForce))
+        {
+            frictionForce = -(sumForce+NormalForce);
+            vel = giverVel;
+            Debug.Log(name+" static firction: " + frictionForce);
+        }
+        else
+        {
+            frictionForce = -Vector3.Magnitude(friction * NormalForce)*Vector3.Normalize(vel-giverVel);
+            Debug.Log(name + " dynamic firction: " + frictionForce);
+
+        }
+        return frictionForce;
+    }
+
+    //计算合力的方法
     public Vector3 CalForce(string name)
     {
         Model model = new Model();
         GetObject(name, out model);
         Vector3 sum = Vector3.zero;
-        foreach (string key in model.forces.Keys)
+        Vector3 sumNormal = Vector3.zero;
+        Vector3 sumFriction = Vector3.zero;
+
+        //先计算所有已知大小的力的合力，并忽略冲撞力（ForceType.HIT）
+        foreach (Force f in model.forces.Values)
         {
-            Force f = model.forces[key];
-            if (f.needCal == false)
+            //needCal为false表明已知大小
+            if (f.needCal == false && f.type!=ForceType.HIT)
             {
                 sum += f.volume;
             }
 
         }
-
-        foreach (string key in model.forces.Keys)
+        //再计算所有未知大小的支持力，进而计算合力，并忽略冲撞力（ForceType.HIT）
+        foreach (Force f in model.forces.Values)
         {
-            Force f = model.forces[key];
-
-            if (f.type == ForceType.NORMAL)
+            if (f.needCal == true && f.type != ForceType.HIT)
             {
-                if (model.modelType == ModelType.BALL)
+                if (f.type == ForceType.NORMAL)
                 {
+                    //Debug.Log("CalNormal: " + f.ToString());
                     string temp = "";
                     float mass = 0;
                     Vector3 vel = Vector3.zero;
                     model.GetAttribute(out temp, out mass, out vel);
-                    f.volume = CalNormal(name, mass,vel, f.giverName,sum);
-                    sum += f.volume;
+                    f.volume = CalNormal(name, mass, vel, f.giverName, sum);
+                    sumNormal += f.volume;
+                   
                 }
             }
-            if (f.type == ForceType.FRICTION)
-            {
-                Debug.Log("FRICTION NOT IMPLEMENTED");
-            }
+            
         }
-        return sum;
+        //再计算所有未知大小的摩擦力，进而计算合力，并忽略冲撞力（ForceType.HIT）
+        foreach (Force f in model.forces.Values)
+        {
+            if (f.needCal == true && f.type != ForceType.HIT)
+            {
+                if (f.type == ForceType.FRICTION)
+                {
+                    //Debug.Log("CalFriction: " + f.ToString());
+                    string temp = "";
+                    float mass = 0;
+                    Vector3 vel = Vector3.zero;
+                    Force normalForce = new Force();
+                    model.GetAttribute(out temp, out mass, out vel);
+                    f.volume = CalFriction(name, mass, ref vel, f.giverName, sumNormal,sum);
+                    sumFriction += f.volume;
+                    model.SetAttribute(temp, mass, vel);
+                }
+            }
+
+        }
+        return sum+sumNormal+ sumFriction;
     }
 
     public void CalHit(string name, string otherName,Vector3 p1, Vector3 p2, out Vector3 v1,out Vector3 v2)
