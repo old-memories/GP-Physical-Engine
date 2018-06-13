@@ -26,8 +26,11 @@ public class PlaneController : MonoBehaviour {
 
 
 
-    [Range(1, 5)]
-    public float scale = 1; //ONLY X and Z 
+    [Range(1, 100)]
+    public float scaleX = 1; //ONLY X
+
+    [Range(1, 100)]
+    public float scaleZ = 1; //ONLY Z 
 
     private Vector3 initScale;
 
@@ -46,8 +49,11 @@ public class PlaneController : MonoBehaviour {
     // Use this for initialization
     void Start () {
         initScale = transform.localScale;
+        scaleX = initScale.x;
+        scaleZ = initScale.z;
         normal = CalNormal();
-        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal)+ Vector3.Dot(initScale, normal) * normal;
+        //transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal)+ Vector3.Dot(initScale, normal) * normal;
+        transform.localScale = new Vector3(scaleX, initScale.y, scaleZ);
         name = physicsManager.AddObject("plane", planeMass, normal);
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name,bounciness,bounceCombineType);
@@ -59,7 +65,8 @@ public class PlaneController : MonoBehaviour {
     // Update is called once per frame
     void Update () {
         normal = CalNormal();
-        transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal) + Vector3.Dot(initScale, normal) * normal;
+        //transform.localScale = scale * (initScale - Vector3.Dot(initScale, normal) * normal) + Vector3.Dot(initScale, normal) * normal;
+        transform.localScale = new Vector3(scaleX, initScale.y, scaleZ);
         physicsManager.SetObject(name, normal);
         physicsManager.SetObject(name, bounciness, bounceCombineType);
         physicsManager.SetObject(name, friction, frictionCombineType);

@@ -131,14 +131,30 @@ public class Model
     {
         Force f = new Force(giverName,type, name);
         Debug.Log(f.ToString());
-        forces.Add(name, f);
+        try
+        {
+            forces.Add(name, f);
+
+        }
+        catch (Exception)
+        {
+            Debug.Log("AddForce: Adding force: " + f.ToString() + " failed.");
+        }
     }
 
     public void AddForce(string giverName, ForceType type, Vector3 volume, string name)
     {
         Force f = new Force(giverName, type, name,volume);
         Debug.Log(f.ToString());
-        forces.Add(name, f);
+        try
+        {
+            forces.Add(name, f);
+
+        }
+        catch (Exception)
+        {
+            Debug.Log("AddForce: Adding force: " + f.ToString() + " failed.");
+        }
     }
 
 
@@ -425,7 +441,10 @@ public class PhysicsManager : MonoBehaviour
             {
                 if (!started)
                 {
-                    selectedGameObject.transform.Translate(new Vector3(moveRight, moveUp, moveForward) * inputSensitive);
+                    //float y = ca.transform.rotation.eulerAngles.y;
+                    //Vector3 target = Quaternion.Euler(0, y, 0) * new Vector3(-moveForward, moveUp, moveRight);
+                    Vector3 target = new Vector3(moveForward, moveUp, moveRight);
+                    selectedGameObject.transform.Translate( target * inputSensitive);
                 }
             }
             yield return null;

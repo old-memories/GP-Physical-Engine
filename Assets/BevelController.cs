@@ -9,15 +9,22 @@ public class BevelController : MonoBehaviour {
     public GameObject p1;
     public GameObject p2;
     public GameObject p3;
+    public GameObject H;
+    public GameObject S;
+    public GameObject L;
 
-    [Range(0,Mathf.PI/2.0f)]
-    public float angle = Mathf.PI/4.0f;
+   public Vector3 initScaleH;
+   public Vector3 initScaleL;
+   public Vector3 initScaleS;
+
+ 
     [Range(1,5)]
-    public float scale = 1;
+    public float height = 1;
+    [Range(1, 5)]
+    public float length = 1;
 
     public Vector3 normal;
 
-    private float initPosY;
 
     private const  float bevelMass =-1;
 
@@ -47,7 +54,18 @@ public class BevelController : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
-        initPosY = transform.localPosition.y;
+
+        initScaleH = H.transform.localScale;
+        initScaleL = L.transform.localScale;
+        initScaleS = S.transform.localScale;
+
+
+ 
+
+
+        height = initScaleH.y;
+        length = initScaleL.y;
+
         //transform.localScale = new Vector3(transform.localScale.x, scale*Mathf.Tan(angle), scale);
         //transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
         //angle = Mathf.Atan2(transform.localScale.y,transform.localScale.z);
@@ -61,9 +79,16 @@ public class BevelController : MonoBehaviour {
 
     }
 
-    // Update is called once per frame
+    // Update is called once per frames.
     void Update () {
-        //transform.localScale = new Vector3(transform.localScale.x, scale * Mathf.Tan(angle), scale);
+        H.transform.localPosition = new Vector3(H.transform.localPosition.x, H.transform.localPosition.y+(height - H.transform.localScale.y) * 0.5f, H.transform.localPosition.z);
+        L.transform.localPosition = new Vector3(L.transform.localPosition.x, L.transform.localPosition.y, L.transform.localPosition.z - (length - L.transform.localScale.y) * 0.5f);
+        S.transform.localPosition = new Vector3(S.transform.localPosition.x, S.transform.localPosition.y + (height-H.transform.localScale.y) * 0.5f, S.transform.localPosition.z - (length-L.transform.localScale.y) * 0.5f);
+        H.transform.localScale = new Vector3(H.transform.localScale.x, height, H.transform.localScale.z);
+        L.transform.localScale = new Vector3(L.transform.localScale.x, length, L.transform.localScale.z);
+        S.transform.localScale = new Vector3(S.transform.localScale.x, Mathf.Sqrt(height * height + length * length), S.transform.localScale.z);
+        S.transform.localEulerAngles = new Vector3(Mathf.Atan(length / height)*Mathf.Rad2Deg, S.transform.rotation.y, S.transform.rotation.z);
+        // transform.localScale = new Vector3(transform.localScale.x, scale * Mathf.Tan(angle), scale);
         //transform.localPosition = new Vector3(transform.position.x, initPosY * transform.localScale.y, transform.position.z);
         //angle = Mathf.Atan2(transform.localScale.y, transform.localScale.z);
         normal = CalNormal();
